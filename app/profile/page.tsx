@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { Eye, EyeOff } from "lucide-react";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -13,8 +14,18 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [newPassword, setNewPassword] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [newEmail, setNewEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [errors, setErrors] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
   useEffect(() => {
     fetch("/api/auth/user")
@@ -36,8 +47,59 @@ export default function ProfilePage() {
       });
   }, [router]);
 
+  const validatePassword = (password: string) => {
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      return "Password must contain at least 8 characters, one uppercase letter, one lowercase letter, one number, and one special character";
+    }
+    return true;
+  };
+
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrors({
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    });
+
+    let hasErrors = false;
+    const newErrors = {
+      currentPassword: "",
+      newPassword: "",
+      confirmPassword: "",
+    };
+
+    if (!currentPassword) {
+      newErrors.currentPassword = "Current password is required";
+      hasErrors = true;
+    }
+
+    const passwordValidation = validatePassword(newPassword);
+    if (typeof passwordValidation === "string") {
+      newErrors.newPassword = passwordValidation;
+      hasErrors = true;
+    }
+
+    // Check if current password and new password are the same
+    if (currentPassword === newPassword) {
+      newErrors.newPassword =
+        "New password must be different from current password";
+      hasErrors = true;
+    }
+
+    if (newPassword !== confirmPassword) {
+      newErrors.confirmPassword = "New passwords do not match";
+      newErrors.newPassword = "New passwords do not match";
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      setErrors(newErrors);
+      return;
+    }
+
     setIsLoading(true);
 
     toast.promise(
@@ -47,17 +109,28 @@ export default function ProfilePage() {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ password: newPassword }),
+          body: JSON.stringify({
+            currentPassword,
+            newPassword,
+          }),
         });
 
         const data = await response.json();
 
         if (!response.ok) {
+          if (data.error === "Current password is incorrect") {
+            setErrors((prev) => ({
+              ...prev,
+              currentPassword: "Current password is incorrect",
+            }));
+          }
           throw new Error(data.error || "Failed to update password");
         }
 
         setIsEditing(false);
         setNewPassword("");
+        setCurrentPassword("");
+        setConfirmPassword("");
       },
       {
         loading: "Updating password...",
@@ -153,21 +226,92 @@ export default function ProfilePage() {
           </div>
           {isEditing ? (
             <form onSubmit={handlePasswordChange} className="space-y-4">
-              <div>
-                <Input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  disabled={isLoading}
-                  placeholder="Enter new password"
-                />
-                <p className="text-sm text-gray-500 mt-1">
-                  Password must contain at least 8 characters, one uppercase
-                  letter, one lowercase letter, one number, and one special
-                  character.
-                </p>
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    type={showCurrentPassword ? "text" : "password"}
+                    value={currentPassword}
+                    onChange={(e) => setCurrentPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    placeholder="Enter current password"
+                    className={errors.currentPassword ? "border-red-500" : ""}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                  </button>
+                </div>
+                {errors.currentPassword && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.currentPassword}
+                  </p>
+                )}
               </div>
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    type={showNewPassword ? "text" : "password"}
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    placeholder="Enter new password"
+                    className={errors.newPassword ? "border-red-500" : ""}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {errors.newPassword && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.newPassword}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <div className="relative">
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    disabled={isLoading}
+                    placeholder="Confirm new password"
+                    className={errors.confirmPassword ? "border-red-500" : ""}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff size={16} />
+                    ) : (
+                      <Eye size={16} />
+                    )}
+                  </button>
+                </div>
+                {errors.confirmPassword && (
+                  <p className="text-sm text-red-500 mt-1">
+                    {errors.confirmPassword}
+                  </p>
+                )}
+              </div>
+
               <div className="flex space-x-2">
                 <Button type="submit" disabled={isLoading}>
                   Save

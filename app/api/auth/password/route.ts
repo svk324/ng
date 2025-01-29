@@ -15,19 +15,40 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { password } = await req.json();
+    const { currentPassword, newPassword } = await req.json();
     const decoded = verify(token.value, process.env.JWT_SECRET!) as {
       id: string;
       email: string;
     };
 
-    // Password validation
+    // Get user with current password
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Verify current password
+    const isPasswordValid = await bcrypt.compare(
+      currentPassword,
+      user.password
+    );
+    if (!isPasswordValid) {
+      return NextResponse.json(
+        { error: "Current password is incorrect" },
+        { status: 400 }
+      );
+    }
+
+    // Password validation for new password
     if (
-      password.length < 8 ||
-      !/[A-Z]/.test(password) ||
-      !/[a-z]/.test(password) ||
-      !/[0-9]/.test(password) ||
-      !/[!@#$%^&*]/.test(password)
+      newPassword.length < 8 ||
+      !/[A-Z]/.test(newPassword) ||
+      !/[a-z]/.test(newPassword) ||
+      !/[0-9]/.test(newPassword) ||
+      !/[!@#$%^&*]/.test(newPassword)
     ) {
       return NextResponse.json(
         { error: "Password does not meet security requirements" },
@@ -35,7 +56,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(newPassword, 12);
     await prisma.user.update({
       where: { id: decoded.id },
       data: { password: hashedPassword },
@@ -43,6 +64,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({ message: "Password updated successfully" });
   } catch (error) {
+    console.error("Password update error:", error);
     return NextResponse.json(
       { error: "Failed to update password" },
       { status: 500 }
