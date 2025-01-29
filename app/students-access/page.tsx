@@ -8,6 +8,7 @@ import AddStudentForm from "@/components/AddStudentForm";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import ConfirmationAlert from "@/components/ConfirmationAlert";
 
 interface Student {
   id: string;
@@ -24,6 +25,10 @@ interface Course {
 export default function StudentsAccessPage() {
   const router = useRouter();
   const [courses, setCourses] = useState<Course[]>([]);
+  const [studentToDelete, setStudentToDelete] = useState<{
+    courseId: string;
+    email: string;
+  } | null>(null);
 
   useEffect(() => {
     fetch("/api/courses?include=students")
@@ -71,6 +76,22 @@ export default function StudentsAccessPage() {
 
   return (
     <div className="container mx-auto p-6">
+      <ConfirmationAlert
+        isOpen={!!studentToDelete}
+        onClose={() => setStudentToDelete(null)}
+        onConfirm={() => {
+          if (studentToDelete) {
+            handleRemoveStudent(
+              studentToDelete.courseId,
+              studentToDelete.email
+            );
+            setStudentToDelete(null);
+          }
+        }}
+        title="Confirm Deletion"
+        message="Are you sure you want to remove this student?"
+      />
+
       <h1 className="text-3xl font-bold mb-6">Student Access Management</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {courses.map((course) => (
@@ -103,7 +124,10 @@ export default function StudentsAccessPage() {
                         variant="destructive"
                         size="sm"
                         onClick={() =>
-                          handleRemoveStudent(course.id, student.studentEmail)
+                          setStudentToDelete({
+                            courseId: course.id,
+                            email: student.studentEmail,
+                          })
                         }
                       >
                         <Trash2 className="h-4 w-4" />

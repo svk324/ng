@@ -1,24 +1,45 @@
 import * as React from "react";
-import { cn } from "@/lib/utils";
 
 const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
   ({ className, type, placeholder, ...props }, ref) => {
     const inputRef = React.useRef<HTMLInputElement>(null);
+    const [isFocused, setIsFocused] = React.useState(false);
+    const [hasValue, setHasValue] = React.useState(false);
 
-    // Focus input when the placeholder is clicked
-    const handlePlaceholderClick = () => {
-      inputRef.current?.focus();
+    const handleFocus = () => {
+      setIsFocused(true);
+    };
+
+    const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+      setIsFocused(false);
+      setHasValue(!!e.target.value);
+    };
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setHasValue(!!e.target.value);
+      if (props.onChange) {
+        props.onChange(e);
+      }
     };
 
     return (
       <div className="relative w-full">
         <input
           type={type}
-          placeholder={placeholder}
-          className={cn(
-            "peer flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-base shadow-sm transition-all duration-200 focus:outline-none focus:ring-1 focus:ring-ring  file:border-0 file:bg-transparent file:text-sm file:font-medium file:text-foreground placeholder:text-transparent placeholder-shown:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
-            className
-          )}
+          className={`
+            w-full
+            h-10
+            px-3
+            text-base
+            font-medium
+            border border-black
+            rounded-md
+            bg-white
+            outline-none
+            transition-all
+            
+            ${isFocused ? "border-2" : "border border-gray-200"}
+            ${className || ""}`}
           ref={(el) => {
             inputRef.current = el;
             if (typeof ref === "function") ref(el);
@@ -26,14 +47,27 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
               (ref as React.MutableRefObject<HTMLInputElement | null>).current =
                 el;
           }}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onChange={handleChange}
           {...props}
         />
-        <span
-          className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base text-muted-foreground transition-all duration-200 ease-in-out peer-placeholder-shown:top-1/2 peer-placeholder-shown:text-base peer-focus:top-0 peer-focus:text-sm peer-focus:text-foreground peer-focus:bg-background px-1 cursor-pointer"
-          onClick={handlePlaceholderClick} // Clickable placeholder to focus the input
+        <label
+          className={`
+            absolute
+            left-3
+            transition-all
+            duration-200
+            font-normal
+            pointer-events-none
+            ${
+              isFocused || hasValue
+                ? "-top-[7.5px] text-[10px] bg-white px-1 text-black font-light"
+                : "top-2 text-gray-400"
+            }`}
         >
           {placeholder}
-        </span>
+        </label>
       </div>
     );
   }

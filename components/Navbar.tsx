@@ -4,9 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useState } from "react";
+import ConfirmationAlert from "@/components/ConfirmationAlert";
 
 export default function Navbar() {
   const router = useRouter();
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const handleLogout = async () => {
     toast.promise(
@@ -31,6 +34,15 @@ export default function Navbar() {
 
   return (
     <nav className="bg-white shadow-sm border-b">
+      <ConfirmationAlert
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        onConfirm={handleLogout}
+        title="Confirm Logout"
+        message="Are you sure you want to logout?"
+        confirmButtonText="Logout"
+      />
+
       <div className="container mx-auto px-6 py-4">
         <div className="flex justify-between items-center">
           <div className="flex items-center space-x-4">
@@ -50,7 +62,7 @@ export default function Navbar() {
               Profile
             </Link>
           </div>
-          <Button onClick={handleLogout} variant="outline">
+          <Button onClick={() => setShowLogoutConfirm(true)} variant="outline">
             Logout
           </Button>
         </div>
