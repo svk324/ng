@@ -1,4 +1,8 @@
 // File: src/app/page.tsx
+"use client";
+
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Card,
   CardHeader,
@@ -8,6 +12,38 @@ import {
 import Link from "next/link";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check authentication status using the API
+    fetch("/api/auth/user")
+      .then((res) => {
+        if (res.ok) {
+          setIsAuthenticated(true);
+        } else {
+          router.replace("/login");
+        }
+      })
+      .catch(() => {
+        router.replace("/login");
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, [router]);
+
+  // Show nothing while checking authentication
+  if (isLoading) {
+    return null;
+  }
+
+  // Show dashboard only if authenticated
+  if (!isAuthenticated) {
+    return null;
+  }
+
   return (
     <div className="container mx-auto p-6">
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>

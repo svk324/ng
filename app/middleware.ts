@@ -1,31 +1,41 @@
 // File: src/middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { verify } from "jsonwebtoken";
 
-// Add paths that don't require authentication
-const publicPaths = ["/login", "/register"];
+// Routes that don't require authentication
+const publicRoutes = ["/login", "/register"];
 
 export function middleware(request: NextRequest) {
-  const token = request.cookies.get("token")?.value;
-  const path = request.nextUrl.pathname;
+  const { pathname } = request.nextUrl;
+  const token = request.cookies.get("token");
 
-  if (publicPaths.includes(path)) {
+  // Allow public routes
+  if (publicRoutes.includes(pathname)) {
+    // Redirect to dashboard if already authenticated
+    if (token) {
+      return NextResponse.redirect(new URL("/", request.url));
+    }
     return NextResponse.next();
   }
 
+  // Protect all other routes
   if (!token) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
 
-  try {
-    verify(token, process.env.JWT_SECRET!);
-    return NextResponse.next();
-  } catch (error) {
-    return NextResponse.redirect(new URL("/login", request.url));
-  }
+  return NextResponse.next();
 }
 
+// Update the config to protect all routes
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  matcher: [
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico).*)",
+  ],
 };

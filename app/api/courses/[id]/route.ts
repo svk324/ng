@@ -4,35 +4,56 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
-export async function PUT(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+type RouteParams = {
+  params: {
+    id: string;
+  };
+};
+
+export async function PUT(req: Request, { params }: RouteParams) {
+  if (!params?.id) {
+    return NextResponse.json(
+      { error: "Course ID is required" },
+      { status: 400 }
+    );
+  }
+
   const data = await req.json();
 
-  const course = await prisma.course.update({
-    where: { id: params.id },
-    data: {
-      title: data.title,
-      description: data.description,
-      imageUrl: data.imageUrl,
-      sections: {
-        deleteMany: {},
-        create: data.sections.map((section: any) => ({
-          title: section.title,
-          videoUrl: section.videoUrl,
-        })),
+  try {
+    const course = await prisma.course.update({
+      where: { id: params.id },
+      data: {
+        title: data.title,
+        description: data.description,
+        imageUrl: data.imageUrl,
+        sections: {
+          deleteMany: {},
+          create: data.sections.map((section: any) => ({
+            title: section.title,
+            videoUrl: section.videoUrl,
+          })),
+        },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(course);
+    return NextResponse.json(course);
+  } catch (error) {
+    return NextResponse.json(
+      { error: "Failed to update course" },
+      { status: 500 }
+    );
+  }
 }
 
-export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
-) {
+export async function GET(req: Request, { params }: RouteParams) {
+  if (!params?.id) {
+    return NextResponse.json(
+      { error: "Course ID is required" },
+      { status: 400 }
+    );
+  }
+
   try {
     const course = await prisma.course.findUnique({
       where: { id: params.id },
