@@ -3,22 +3,30 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Navbar() {
   const router = useRouter();
 
   const handleLogout = async () => {
-    try {
-      const response = await fetch("/api/auth/logout", {
-        method: "POST",
-      });
+    toast.promise(
+      async () => {
+        const response = await fetch("/api/auth/logout", {
+          method: "POST",
+        });
 
-      if (response.ok) {
+        if (!response.ok) {
+          throw new Error("Logout failed");
+        }
+
         router.push("/login");
+      },
+      {
+        loading: "Logging out...",
+        success: "Logged out successfully",
+        error: "Logout failed",
       }
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
+    );
   };
 
   return (

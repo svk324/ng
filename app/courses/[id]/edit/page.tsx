@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { toast } from "sonner";
 
 interface Section {
   title: string;
@@ -36,24 +37,28 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     e.preventDefault();
     if (!course) return;
 
-    try {
-      const response = await fetch(`/api/courses/${params.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(course),
-      });
+    toast.promise(
+      async () => {
+        const response = await fetch(`/api/courses/${params.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(course),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to update course");
+        if (!response.ok) {
+          throw new Error("Failed to update course");
+        }
+
+        router.push("/courses");
+      },
+      {
+        loading: "Updating course...",
+        success: "Course updated successfully",
+        error: "Failed to update course",
       }
-
-      router.push("/courses");
-    } catch (error) {
-      console.error("Error updating course:", error);
-      // Add error handling UI here
-    }
+    );
   };
 
   if (!course) return <div>Loading...</div>;

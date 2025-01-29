@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
+import { toast } from "sonner";
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -23,29 +24,34 @@ export default function NewCoursePage() {
       title: formData.get("title"),
       description: formData.get("description"),
       imageUrl: formData.get("imageUrl"),
-      sections: sections.filter((section) => section.title && section.videoUrl), // Only include non-empty sections
+      sections: sections.filter((section) => section.title && section.videoUrl),
     };
 
-    try {
-      const response = await fetch("/api/courses", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(courseData),
-      });
+    toast.promise(
+      async () => {
+        const response = await fetch("/api/courses", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(courseData),
+        });
 
-      if (!response.ok) {
-        throw new Error("Failed to create course");
+        if (!response.ok) {
+          throw new Error("Failed to create course");
+        }
+
+        router.push("/courses");
+        router.refresh();
+      },
+      {
+        loading: "Creating course...",
+        success: "Course created successfully",
+        error: (err) =>
+          err instanceof Error ? err.message : "Failed to create course",
       }
-
-      router.push("/courses");
-      router.refresh(); // Refresh the courses page to show the new course
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to create course");
-    } finally {
-      setIsSubmitting(false);
-    }
+    );
+    setIsSubmitting(false);
   };
 
   return (

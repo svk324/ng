@@ -6,35 +6,44 @@ import { useRouter } from "next/navigation";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function LoginPage() {
   const router = useRouter();
-  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsLoading(true);
+
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email");
+    const password = formData.get("password");
 
-    try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        body: JSON.stringify({
-          email: formData.get("email"),
-          password: formData.get("password"),
-        }),
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
+    toast.promise(
+      async () => {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ email, password }),
+        });
 
-      if (res.ok) {
-        router.push("/");
-      } else {
-        setError("Invalid credentials");
+        if (!response.ok) {
+          throw new Error("Invalid credentials");
+        }
+
+        router.push("/courses");
+        router.refresh();
+      },
+      {
+        loading: "Logging in...",
+        success: "Logged in successfully",
+        error: (err) => (err instanceof Error ? err.message : "Login failed"),
       }
-    } catch (err) {
-      setError("Something went wrong");
-    }
+    );
+    setIsLoading(false);
   };
 
   return (
@@ -53,8 +62,7 @@ export default function LoginPage() {
               <label className="block mb-2">Password</label>
               <Input name="password" type="password" required />
             </div>
-            {error && <p className="text-red-500 text-sm">{error}</p>}
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full" disabled={isLoading}>
               Login
             </Button>
           </form>

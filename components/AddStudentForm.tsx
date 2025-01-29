@@ -4,6 +4,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 
 export default function AddStudentForm({ courseId }: { courseId: string }) {
   const [studentEmail, setStudentEmail] = useState("");
@@ -11,22 +12,33 @@ export default function AddStudentForm({ courseId }: { courseId: string }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    toast.promise(
+      async () => {
+        const response = await fetch("/api/students/access", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            studentEmail,
+            courseId,
+            certificateUrl,
+          }),
+        });
 
-    await fetch("/api/students/access", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+        if (!response.ok) {
+          throw new Error("Failed to add student");
+        }
+
+        setStudentEmail("");
+        setCertificateUrl("");
       },
-      body: JSON.stringify({
-        studentEmail,
-        courseId,
-        certificateUrl,
-      }),
-    });
-
-    setStudentEmail("");
-    setCertificateUrl("");
-    // Optionally refresh the page or update the UI
+      {
+        loading: "Adding student...",
+        success: "Student added successfully",
+        error: "Failed to add student",
+      }
+    );
   };
 
   return (
