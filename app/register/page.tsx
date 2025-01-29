@@ -28,6 +28,7 @@ interface RegisterFormData {
   email: string;
   password: string;
   confirmPassword: string;
+  isAdmin: boolean;
 }
 
 export default function RegisterPage() {
@@ -40,6 +41,7 @@ export default function RegisterPage() {
       email: "",
       password: "",
       confirmPassword: "",
+      isAdmin: false,
     },
   });
 
@@ -103,6 +105,7 @@ export default function RegisterPage() {
         body: JSON.stringify({
           email: data.email,
           password: data.password,
+          isAdmin: data.isAdmin,
         }),
       });
 
@@ -201,6 +204,27 @@ export default function RegisterPage() {
                       />
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="isAdmin"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+                    <FormControl>
+                      <input
+                        type="checkbox"
+                        checked={field.value}
+                        onChange={field.onChange}
+                        disabled={isSubmitting}
+                        className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>Register as Admin</FormLabel>
+                    </div>
                   </FormItem>
                 )}
               />
