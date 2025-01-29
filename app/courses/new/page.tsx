@@ -10,12 +10,42 @@ import { Card } from "@/components/ui/card";
 export default function NewCoursePage() {
   const router = useRouter();
   const [sections, setSections] = useState([{ title: "", videoUrl: "" }]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // Handle form submission
-    // Add API call to create course
-    router.push("/courses");
+    setIsSubmitting(true);
+    setError("");
+
+    const formData = new FormData(e.currentTarget);
+    const courseData = {
+      title: formData.get("title"),
+      description: formData.get("description"),
+      imageUrl: formData.get("imageUrl"),
+      sections: sections.filter((section) => section.title && section.videoUrl), // Only include non-empty sections
+    };
+
+    try {
+      const response = await fetch("/api/courses", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(courseData),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create course");
+      }
+
+      router.push("/courses");
+      router.refresh(); // Refresh the courses page to show the new course
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to create course");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -23,6 +53,7 @@ export default function NewCoursePage() {
       <h1 className="text-3xl font-bold mb-6">Create New Course</h1>
       <Card className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && <div className="text-red-500 text-sm mb-4">{error}</div>}
           <div>
             <label className="block mb-2">Title</label>
             <Input name="title" required />
@@ -47,6 +78,7 @@ export default function NewCoursePage() {
                     newSections[index].title = e.target.value;
                     setSections(newSections);
                   }}
+                  required
                 />
                 <Input
                   placeholder="Video URL"
@@ -56,6 +88,7 @@ export default function NewCoursePage() {
                     newSections[index].videoUrl = e.target.value;
                     setSections(newSections);
                   }}
+                  required
                 />
               </div>
             ))}
@@ -69,7 +102,9 @@ export default function NewCoursePage() {
               Add Section
             </Button>
           </div>
-          <Button type="submit">Create Course</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Creating..." : "Create Course"}
+          </Button>
         </form>
       </Card>
     </div>

@@ -36,15 +36,24 @@ export default function EditCoursePage({ params }: { params: { id: string } }) {
     e.preventDefault();
     if (!course) return;
 
-    await fetch(`/api/courses/${params.id}`, {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(course),
-    });
+    try {
+      const response = await fetch(`/api/courses/${params.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(course),
+      });
 
-    router.push("/courses");
+      if (!response.ok) {
+        throw new Error("Failed to update course");
+      }
+
+      router.push("/courses");
+    } catch (error) {
+      console.error("Error updating course:", error);
+      // Add error handling UI here
+    }
   };
 
   if (!course) return <div>Loading...</div>;

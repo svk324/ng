@@ -4,7 +4,7 @@ import type { NextRequest } from "next/server";
 import { verify } from "jsonwebtoken";
 
 // Add paths that don't require authentication
-const publicPaths = ["/login"];
+const publicPaths = ["/login", "/register"];
 
 export function middleware(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
