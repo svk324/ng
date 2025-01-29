@@ -1,16 +1,73 @@
 // File: src/app/students-access/page.tsx
-import { PrismaClient } from "@prisma/client";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import AddStudentForm from "@/components/AddStudentForm";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Trash2 } from "lucide-react";
 
-const prisma = new PrismaClient();
+interface Student {
+  id: string;
+  studentEmail: string;
+  certificateUrl?: string;
+}
 
-export default async function StudentsAccessPage() {
-  const courses = await prisma.course.findMany({
-    include: {
-      students: true,
-    },
-  });
+interface Course {
+  id: string;
+  title: string;
+  students: Student[];
+}
+
+export default function StudentsAccessPage() {
+  const router = useRouter();
+  const [courses, setCourses] = useState<Course[]>([]);
+
+  useEffect(() => {
+    fetch("/api/courses?include=students")
+      .then((res) => res.json())
+      .then((data) => setCourses(data))
+      .catch((error) => toast.error("Failed to load courses"));
+  }, []);
+
+  const handleRemoveStudent = async (
+    courseId: string,
+    studentEmail: string
+  ) => {
+    try {
+      const response = await fetch(
+        `/api/students/access/${courseId}/${encodeURIComponent(studentEmail)}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to remove student");
+      }
+
+      // Update local state
+      setCourses(
+        courses.map((course) => {
+          if (course.id === courseId) {
+            return {
+              ...course,
+              students: course.students.filter(
+                (student) => student.studentEmail !== studentEmail
+              ),
+            };
+          }
+          return course;
+        })
+      );
+
+      toast.success("Student removed successfully");
+    } catch (error) {
+      toast.error("Failed to remove student");
+    }
+  };
 
   return (
     <div className="container mx-auto p-6">
@@ -27,16 +84,30 @@ export default async function StudentsAccessPage() {
                 <h3 className="font-semibold mb-2">Enrolled Students</h3>
                 <ul className="space-y-2">
                   {course.students.map((student) => (
-                    <li key={student.id} className="text-sm">
-                      {student.studentEmail}
-                      {student.certificateUrl && (
-                        <a
-                          href={student.certificateUrl}
-                          className="text-blue-500 ml-2"
-                        >
-                          View Certificate
-                        </a>
-                      )}
+                    <li
+                      key={student.id}
+                      className="text-sm flex items-center justify-between"
+                    >
+                      <div>
+                        {student.studentEmail}
+                        {student.certificateUrl && (
+                          <a
+                            href={student.certificateUrl}
+                            className="text-blue-500 ml-2"
+                          >
+                            View Certificate
+                          </a>
+                        )}
+                      </div>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() =>
+                          handleRemoveStudent(course.id, student.studentEmail)
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </li>
                   ))}
                 </ul>
