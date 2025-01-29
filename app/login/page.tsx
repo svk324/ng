@@ -55,12 +55,20 @@ export default function LoginPage() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block mb-2">Email</label>
-              <Input name="email" type="email" required />
+              <Input
+                name="email"
+                type="email"
+                placeholder="Enter email"
+                required
+              />
             </div>
             <div>
-              <label className="block mb-2">Password</label>
-              <Input name="password" type="password" required />
+              <Input
+                name="password"
+                type="password"
+                placeholder="Enter password"
+                required
+              />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
               Login

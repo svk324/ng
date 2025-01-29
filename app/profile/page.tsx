@@ -114,7 +114,6 @@ export default function ProfilePage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div>
-            <label className="font-semibold">Email</label>
             {isEditingEmail ? (
               <form onSubmit={handleEmailChange} className="space-y-4">
                 <Input
@@ -155,7 +154,6 @@ export default function ProfilePage() {
           {isEditing ? (
             <form onSubmit={handlePasswordChange} className="space-y-4">
               <div>
-                <label className="font-semibold">New Password</label>
                 <Input
                   type="password"
                   value={newPassword}

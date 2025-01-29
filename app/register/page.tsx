@@ -143,7 +143,6 @@ export default function RegisterPage() {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -167,7 +166,6 @@ export default function RegisterPage() {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
@@ -193,7 +191,6 @@ export default function RegisterPage() {
                 }}
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
                       <Input
                         {...field}
