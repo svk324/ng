@@ -8,9 +8,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { toast } from "sonner";
 
+interface Video {
+  title: string;
+  videoUrl: string;
+}
+
+interface Section {
+  title: string;
+  videos: Video[];
+}
+
 export default function NewCoursePage() {
   const router = useRouter();
-  const [sections, setSections] = useState([{ title: "", videoUrl: "" }]);
+  const [sections, setSections] = useState<Section[]>([
+    { title: "", videos: [{ title: "", videoUrl: "" }] },
+  ]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
@@ -24,7 +36,10 @@ export default function NewCoursePage() {
       title: formData.get("title"),
       description: formData.get("description"),
       imageUrl: formData.get("imageUrl"),
-      sections: sections.filter((section) => section.title && section.videoUrl),
+      sections: sections.filter(
+        (section) =>
+          section.title && section.videos.some((v) => v.title && v.videoUrl)
+      ),
     };
 
     toast.promise(
@@ -74,40 +89,81 @@ export default function NewCoursePage() {
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-4">Sections</h3>
-            {sections.map((section, index) => (
-              <div key={index} className="space-y-4 mb-4">
+            {sections.map((section, sectionIndex) => (
+              <div key={sectionIndex} className="border p-4 mb-4 rounded-lg">
                 <Input
                   placeholder="Section Title"
                   value={section.title}
                   onChange={(e) => {
                     const newSections = [...sections];
-                    newSections[index].title = e.target.value;
+                    newSections[sectionIndex].title = e.target.value;
                     setSections(newSections);
                   }}
+                  className="mb-4"
                   required
                 />
-                <Input
-                  placeholder="Video URL"
-                  value={section.videoUrl}
-                  onChange={(e) => {
+
+                {section.videos.map((video, videoIndex) => (
+                  <div key={videoIndex} className="ml-4 mb-4">
+                    <Input
+                      placeholder="Video Title"
+                      value={video.title}
+                      onChange={(e) => {
+                        const newSections = [...sections];
+                        newSections[sectionIndex].videos[videoIndex].title =
+                          e.target.value;
+                        setSections(newSections);
+                      }}
+                      className="mb-2"
+                      required
+                    />
+                    <Input
+                      placeholder="Video URL"
+                      value={video.videoUrl}
+                      onChange={(e) => {
+                        const newSections = [...sections];
+                        newSections[sectionIndex].videos[videoIndex].videoUrl =
+                          e.target.value;
+                        setSections(newSections);
+                      }}
+                      required
+                    />
+                  </div>
+                ))}
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
                     const newSections = [...sections];
-                    newSections[index].videoUrl = e.target.value;
+                    newSections[sectionIndex].videos.push({
+                      title: "",
+                      videoUrl: "",
+                    });
                     setSections(newSections);
                   }}
-                  required
-                />
+                  className="mt-2"
+                >
+                  Add Video
+                </Button>
               </div>
             ))}
+
             <Button
               type="button"
               variant="outline"
               onClick={() =>
-                setSections([...sections, { title: "", videoUrl: "" }])
+                setSections([
+                  ...sections,
+                  { title: "", videos: [{ title: "", videoUrl: "" }] },
+                ])
               }
             >
               Add Section
             </Button>
           </div>
+
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? "Creating..." : "Create Course"}
           </Button>

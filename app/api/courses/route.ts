@@ -15,8 +15,20 @@ export async function POST(req: Request) {
       sections: {
         create: data.sections.map((section: any) => ({
           title: section.title,
-          videoUrl: section.videoUrl,
+          videos: {
+            create: section.videos.map((video: any) => ({
+              title: video.title,
+              videoUrl: video.videoUrl,
+            })),
+          },
         })),
+      },
+    },
+    include: {
+      sections: {
+        include: {
+          videos: true,
+        },
       },
     },
   });
@@ -31,6 +43,11 @@ export async function GET(request: Request) {
 
     const courses = await prisma.course.findMany({
       include: {
+        sections: {
+          include: {
+            videos: true,
+          },
+        },
         students: includeStudents,
       },
     });
